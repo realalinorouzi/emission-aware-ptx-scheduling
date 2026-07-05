@@ -6,10 +6,10 @@ The workflow includes:
 
 * day-ahead electricity generation forecasting,
 * construction of AEF and MEF-based emission signals,
-* rolling-horizon MIQCP scheduling,
+* rolling horizon MIQCP scheduling,
 * ex-post product carbon intensity propagation,
 
-The study uses publicly available input data from ENTSO-E, MIBGAS, Ember, and GFS, together with process parameters and assumptions reported in the manuscript and Supplementary Information.
+The study uses publicly available input data from ENTSO-E, MIBGAS, Ember, and GFS, together with process parameters and assumptions reported in the manuscript and Supplementary Information. The CSV files used in the codes will be available upon request, even though all data is publicly available.
 
 ## Paper
 Norouzi et al, 2026, DOI:
