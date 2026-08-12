@@ -33,7 +33,7 @@ The workflow was developed and executed in Google Colab. The notebooks are organ
 
 **Ali Norouzi and Erdal Aydin**
 
-*Dynamic carbon tracking in PtX system: Rolling-horizon optimization of hydrogen, ammonia, and methanol production*
+*Hourly Carbon Intensity of Sold Hydrogen, Ammonia, and Methanol under Emission-Aware Scheduling*
 
 The complete journal citation and DOI will be added following publication.
 
