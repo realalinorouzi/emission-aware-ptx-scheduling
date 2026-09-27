@@ -23,7 +23,7 @@ The study uses publicly available data obtained from:
 
 Process parameters, model assumptions, and data-processing procedures are reported in the manuscript and Supplementary Information.
 
-The processed CSV files used directly by the notebooks are not currently included in the repository. They can be provided upon reasonable request. The corresponding raw data are available from the public sources listed above.
+The processed CSV files used directly by the notebooks are currently included in the repository. Extra information can be provided upon request. The corresponding raw data are available from the public sources listed above.
 
 ## Computational Environment
 
