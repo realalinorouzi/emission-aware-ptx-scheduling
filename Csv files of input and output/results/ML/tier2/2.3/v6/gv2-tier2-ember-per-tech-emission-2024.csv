@@ -1,0 +1,12 @@
+Tier1 Tech,EF (kgCo2/MWh)
+gen_biomass_mw,216.56
+gen_fossil_gas_mw,493.02
+gen_hydro_run_of_river_mw,23.74
+gen_nuclear_mw,4.76
+gen_solar_mw,47.57
+gen_wind_onshore_mw,12.29
+gen_waste_mw,216.56
+gen_other_mw,216.56
+gen_other_renewable_mw,29.93
+gen_hydro_dispatchable_mw,23.74
+gen_fossil_coal_oil_mw,758.72
