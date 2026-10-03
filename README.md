@@ -24,16 +24,8 @@ The main workflow is organized so that the processed outputs from the forecastin
 To support reproduction of the reported calculations, the repository includes:
 
 - source notebooks/code for forecasting, emission-signal construction, optimization, carbon accounting, and post-processing;
-- trained Keras ANN model files (`.keras`) for the technology-specific electricity-generation forecasting models;
-- processed 2024 model-ready input files used directly by the optimization, including:
-  - hourly H₂, NH₃, and MeOH demand profiles;
-  - hourly local PV and wind availability;
-  - hourly day-ahead grid electricity prices;
-  - hourly AEF, Soft MEF, and UpRamp MEF signals; and
-  - supporting utility/input files required by the rolling-horizon model;
+- all CSV files for training, optimisations, and also the corresponding output files.
 - model parameters and assumptions documented in the manuscript, Supplementary Information, and Appendices.
-
-Providing the trained ANN files and the final 2024 forecast/emission-signal outputs allows the downstream workflow to be reproduced without retraining the forecasting models.
 
 ## Data Sources
 
