@@ -1,0 +1,9 @@
+series,n_hours,n_nan,nan_fraction
+mef_true_raw_k3_q20,8784,84,0.009562841530054645
+mef_pred_raw_k3_q20,8784,25,0.0028460837887067394
+mef_true_star_k3_q20,8784,84,0.009562841530054645
+mef_pred_star_k3_q20,8784,25,0.0028460837887067394
+mef_true_final_k3_q20,8784,0,0.0
+mef_pred_final_k3_q20,8784,0,0.0
+stack_true_k3_q20,8784,0,0.0
+stack_pred_k3_q20,8784,0,0.0
