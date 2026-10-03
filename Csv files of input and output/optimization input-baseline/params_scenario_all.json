@@ -1,0 +1,33 @@
+{
+  "YEAR": 2024,
+  "N_DAYS_TO_RUN": 7,
+  "START_DAY_OF_YEAR": 1,
+  "LAMBDA_EMIS": 1.0,
+  "KEY_CAPS": {
+    "P_ELZ_MAX_MW": 209.0,
+    "P_GRID_MAX_MW": 295.58,
+    "H2_MAX_KGPH": 3657.567,
+    "NH3_CAP_KGPH": 13472.036,
+    "MEOH_CAP_KGPH": 5818.856,
+    "NH3_CRACK_CAP_KGPH": 6062.416
+  },
+  "PV": {
+    "A_PV_m2": 840000.0,
+    "PV_NAMEPLATE_MWp": 120.0
+  },
+  "WIND": {
+    "N_WT": 35,
+    "WIND_NAMEPLATE_MW": 120.75
+  },
+  "FILES_WRITTEN": {
+    "res_hourly_2024": "/content/data/model_ready/res_hourly_2024.csv",
+    "demand_hourly_2024": "/content/data/model_ready/demand_hourly_2024.csv",
+    "grid_price_hourly_2024": "/content/data/model_ready/grid_price_hourly_2024.csv",
+    "grid_aef_hourly_2024": "/content/data/model_ready/grid_aef_hourly_2024.csv",
+    "grid_mef_upramp_hourly_2024": "/content/data/model_ready/grid_mef_upramp_hourly_2024.csv",
+    "grid_mef_soft_hourly_2024": "/content/data/model_ready/grid_mef_soft_hourly_2024.csv",
+    "mef_upramp_fill_audit": "/content/data/model_ready/mef_upramp_filled_with_aef_hours_2024.csv",
+    "mef_soft_fill_audit": "/content/data/model_ready/mef_soft_filled_with_aef_hours_2024.csv",
+    "plots_dir": "/content/data/model_ready/plots"
+  }
+}
