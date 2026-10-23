@@ -1,0 +1,3 @@
+-r requirements.txt
+gurobipy==13.0.1
+# Configure a Gurobi license appropriate for the full MIQCP.
