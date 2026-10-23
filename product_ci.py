@@ -280,7 +280,7 @@ def derive_zero_initial_cis(recon_df: pd.DataFrame, signal_df: pd.DataFrame, sig
             "All initial tank inventories at the start of the study horizon are assigned zero carbon intensity."
         ),
         "initial_inventory_basis_signal": signal_name,
-        "initial_inventory_basis_datetime_utc": "assumed_zero_initial_inventory",
+        "initial_inventory_basis_datetime_utc": "assumed_zero_initial_CI",
         "initial_inventory_basis_day_of_year": 1,
         "initial_inventory_basis_hour_in_day": 0,
         "initial_inventory_basis_ef_kg_per_kwh": 0.0,
