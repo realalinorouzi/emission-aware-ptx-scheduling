@@ -1,0 +1,13 @@
+# Install in a separate environment for notebooks 01–03.
+# Keep Keras on the TensorFlow backend; this is not a full historical lockfile.
+numpy
+pandas
+keras==3.10.0
+tensorflow
+scikit-learn
+statsmodels
+matplotlib
+entsoe-py
+requests
+openpyxl
+jupyterlab

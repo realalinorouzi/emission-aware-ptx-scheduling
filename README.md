@@ -1,98 +1,187 @@
-# Emission-Aware Power-to-X Scheduling and Product Carbon Intensity Tracking
+# Hourly carbon intensity of sold hydrogen, ammonia and methanol
 
-This repository contains the computational workflow developed for the study:
+Research code for Ali Norouzi and Erdal Aydin, **“Hourly Carbon Intensity of Sold Hydrogen, Ammonia, and Methanol under Emission-Aware Scheduling.”**
 
-**Ali Norouzi and Erdal Aydin**  
-*Hourly Carbon Intensity of Sold Hydrogen, Ammonia, and Methanol under Emission-Aware Scheduling*
+The study links forecast-based electricity emission signals to daily PtX scheduling and then propagates assigned carbon through production, labeled storage, synthesis, ammonia cracking and withdrawal. It evaluates the annual and hourly carbon intensity (CI) of products actually sold. The case study represents Spain in 2024: 366 sequential daily problems and 8,784 UTC flow hours.
 
-The study evaluates how alternative day-ahead electricity-emission signals affect the operation of a grid-connected, multi-product Power-to-X (PtX) plant and how the resulting carbon burden propagates through hydrogen (H₂), ammonia (NH₃), and methanol (MeOH) production, storage, conversion, and final product withdrawal.
+## Code and execution order
 
-## Workflow
+| Stage | Code | Scientific role and handoff |
+| --- | --- | --- |
+| Tier 1 | `notebooks/01_forecasting.ipynb` | ENTSO-E data preparation; chronological train/validation/test splits; scaling; 24-to-24 input/target windows; eleven technology-specific ANNs; training or loading supplied `.keras` weights; hourly 2024 forecasts and evaluation. |
+| Tier 2 | `notebooks/02_emission_signals.ipynb` | AEF, UpRamp MEF and MSDR Soft MEF construction, with the original DLR comparison. Selects the signal columns used by input preparation. |
+| Local RES and model-ready inputs | `notebooks/03_renewable_inputs.ipynb` | Reconstructs hourly GFS temperature, wind and radiation; calculates local PV/wind availability; constructs demand and combines prices and emission signals into model-ready CSVs. |
+| Scheduling | `emission_aware_ptx_notebook.ipynb`, `ptx_optimization.py` | Selects M0/M1/M2, the signal and horizon; runs daily scheduling with state carryover; exports trajectories, operational summaries and states. The script contains the separate formulations and the daily reference-file builder. |
+| Ex-post accounting | `emission_aware_ptx_notebook.ipynb`, `product_ci.py` | Reads saved hourly trajectories and emission signals; propagates labeled carbon stocks; calculates hourly and annual sold-product CI. Optional hourly distribution and paired-comparison functions return tables in memory. |
 
-The repository contains code for:
+Open the principal notebook from the repository root, set its configuration cells, and execute the required sections. Alternatively, import the two scripts in an ordinary Python session as shown below. Neither script starts optimization when imported.
 
-1. day-ahead electricity-generation forecasting for the Spanish power system;
-2. construction of the average emission factor (AEF), MSDR Soft MEF, and UpRamp MEF signals;
-3. rolling-horizon mixed-integer quadratically constrained programming (MIQCP) scheduling of the PtX plant;
-4. ex-post propagation of assigned carbon through production, storage, synthesis, ammonia cracking, and withdrawal; and
-5. analysis of annual and hourly sold-product carbon intensity.
+## Existing repository data map
 
-The main workflow is organized so that the processed outputs from the forecasting and emission-signal stages can be used directly as inputs to the optimization stage.
+All paths in this section are relative to **`Csv files of input and output/`**. These are existing data folders; generated files use a separate `generated/` directory at the repository root.
 
-## Reproduction Materials
+| Existing path | Type | Contents and use |
+| --- | --- | --- |
+| `colab folders data to upload/data_entsoe_es_processed/` | Processed source data / API cache | Hourly UTC ENTSO-E tables for 2022, 2023 and 2024: `gen_actual_ES_2022.csv`, `load_actual_ES_2022.csv`, `da_total_load_ES_2022.csv`, `da_gen_total_ES_2022.csv`, `da_wind_solar_ES_2022.csv`, `da_exchanges_ES_FR_2022.csv`, `da_exchanges_ES_PT_2022.csv`, and `da_elec_price_ES_2022.csv`, with corresponding `_2023.csv` and `_2024.csv` files. Notebook 01 reads these caches directly. Raw ENTSO-E API responses are retrieved by its fetch functions when a cache is missing; separate raw API-response dumps are not supplied. |
+| `colab folders data to upload/ember_co2/` | Processed emission factors | The 2022–2024 `gv2-tier2-ember-per-tech-emission-YYYY.csv` tables retained from the original Colab inputs. |
+| `colab folders data to upload/migbas/` | Processed gas-price input | `da_gas_price_migbasPVB_EURperMWh.xlsx`, used by notebook 01. The spelling `migbas` is the existing directory name. |
+| `colab folders data to upload/` | Supporting material | Also contains the existing `2025.11.27.png` image; it is not a computational input. |
+| `gas price-mibgas/` | Source and processed gas prices | `MIBGAS_Data_2022.xlsx`, `MIBGAS_Data_2023.xlsx`, `MIBGAS_Data_2024.xlsx`, and `da_gas_price_migbasPVB_EURperMWh.xlsx`. |
+| `emission tier2/` | Processed emission-factor inputs | `gv2-ember_co2 per tech mapped on entsoe +2024.xlsx` and the three annual `gv2-tier2-ember-per-tech-emission-YYYY.csv` files. Notebook 02 reads the CSVs. |
+| `results/ML/tier1/` | Trained ANNs and final Tier-1 results | `feature_lists_entsoe.csv` and the eleven technology folders listed below. Each technology folder supplies a `.keras` model, hourly forecasts, daily metrics, a `*_overall_metrics_train_val_test_from_saved_model.csv` file, and evaluation PNGs. Training arrays and scaled/master tables are generated by notebook 01; they are not additional supplied folders. |
+| `results/ML/tier2/2.1/` | AEF intermediate and final results | `tier2_1_aef_train_2022_2023.csv`, `tier2_1_aef_true_2024.csv`, `tier2_1_aef_forecast_from_tier1_2024_full.csv`, `tier2_1_aef_eval_tier1_vs_true_2024_series.csv`, its metrics CSV, and comparison plots. |
+| `results/ML/tier2/2.2/` | UpRamp input and supporting material | `master_ES_train_2022_2023_interp_modified with only true train genmix.csv`; also the original reference PDFs `indian.pdf`, `merit order mef usa.pdf`, and `rampe rate integrated mef merit order.pdf`. Per-technology 2024 inputs are the Tier-1 forecast CSVs. |
+| `results/ML/tier2/2.2/tier2_2_mef_vnew2_outputs/` | UpRamp configuration results | `vnew2_k1_q10/`, `vnew2_k1_q20/`, `vnew2_k3_q10/`, `vnew2_k3_q20/`. Each contains `grid_mef_hourly_2024_k*_q*.csv`, full proxy tables, metrics and weight diagnostics. The parent folder contains the configuration-summary metrics, training stack statistics, calibrated thresholds and combined weight summaries. The selected model-ready signal uses `vnew2_k3_q20/grid_mef_hourly_2024_k3_q20.csv`. |
+| `results/ML/tier2/2.2/vnew2_weight_postproc/` | Existing supplementary post-processing | `vnew2_weight_postproc_existing_summaries_concat.csv` and `vnew2_weight_postproc_summary_from_hourly.csv`. They are retained but are not needed to run optimization or CI. |
+| `results/ML/tier2/2.3/` | MSDR input tables | `genmix_actual&da_load&da_windsolar_2022-23_tier2.3.csv`, `da_load&da_windsolar_2024_tier2.3.csv`, `genmix_actual_2024_tier2.3.csv`, `genmix_tier1forecast_2024_tier2.3.csv`, and the AEF evaluation series. |
+| `results/ML/tier2/2.3/v6/` | MSDR inputs including pre-year history | Actual and forecast 2024 genmix CSVs, `genmix_actual_last month of 2023_tier2.3.csv`, the 2023/2024 factor tables, and the AEF series. |
+| `results/ML/tier2/2.3/v6/k2, rolling window 336h, all year= chosen/` | Selected MSDR results | `k2, rolling 336h, all year, mef2_3_v6_modified_outputs.zip` contains the original detailed MSDR outputs. The folder also contains `full_year_168_vs_336_k2_comparison_report.csv` and `full_year_168_vs_336_k2_tradeoff_table.csv`. The unarchived, selected Soft MEF needed for scheduling is already supplied in `optimization input-baseline/`. |
+| `results/ML/GFS for local RES/` | Weather input and intermediate outputs | Four subfolders: `dswrf/`, `t2m/`, `u100/`, `v100/`, detailed below. These contain extracted GFS CSVs and reconstructed hourly series, rather than raw GRIB files. |
+| `optimization input-baseline/` | Final model-ready input set | The eight files listed in the next section. This is the starting point for scheduling without repeating upstream calculations. |
+| `results/Optimizations/baseline models/` | Saved final scheduling results | M0, three signal-specific M1 cases, and nine M2 cases. The exact directories and output files are listed below. |
 
-To support reproduction of the reported calculations, the repository includes:
+### Trained-model and forecast filenames
 
-- source notebooks/code for forecasting, emission-signal construction, optimization, carbon accounting, and post-processing;
-- all CSV files for training, optimisations, and also the corresponding output files.
-- model parameters and assumptions documented in the manuscript, Supplementary Information, and Appendices.
+Paths below are relative to `Csv files of input and output/results/ML/tier1/`. Folder spelling is preserved, including `other renawables`.
 
-## Data Sources
+| Folder | Supplied trained model | Supplied hourly 2024 forecast |
+| --- | --- | --- |
+| `coaloil/` | `best_mlp_coal_oil.keras` | `gen_fossil_coal_oil_mw_hourly_predictions_2024.csv` |
+| `biomass/` | `best_mlp_biomass.keras` | `gen_biomass_mw_hourly_predictions_2024.csv` |
+| `wind/` | `best_mlp_wind_onshore.keras` | `gen_wind_onshore_mw_hourly_predictions_2024.csv` |
+| `fossil gas/` | `best_mlp_fossil_gas.keras` | `gen_fossil_gas_mw_hourly_predictions_2024.csv` |
+| `nuclear/` | `best_mlp_nuclear.keras` | `gen_nuclear_mw_hourly_predictions_2024.csv` |
+| `solar/` | `best_mlp_solar.keras` | `gen_solar_mw_hourly_predictions_2024.csv` |
+| `waste/` | `best_mlp_waste.keras` | `gen_waste_mw_hourly_predictions_2024.csv` |
+| `other renawables/` | `best_mlp_other_renewables.keras` | `gen_other_renewable_mw_hourly_predictions_2024.csv` |
+| `hydro run of river/` | `best_mlp_hydro_run_of_river.keras` | `gen_hydro_run_of_river_mw_hourly_predictions_2024.csv` |
+| `other/` | `best_mlp_other.keras` | `gen_other_mw_hourly_predictions_2024.csv` |
+| `hydro dispatchable/` | `best_mlp_hydro_dispatchable.keras` | `gen_hydro_dispatchable_mw_hourly_predictions_2024.csv` |
 
-The underlying public data used to construct the processed inputs were obtained from:
+### GFS filenames
 
-- **ENTSO-E Transparency Platform** — electricity generation, load and generation forecasts, wind and solar forecasts, scheduled cross-border exchanges, and day-ahead electricity prices;
-- **MIBGAS** — day-ahead natural-gas prices;
-- **Ember** — technology-specific electricity emission factors;
-- **Global Forecast System (GFS)** — meteorological inputs used to construct local PV and wind availability.
+Under `Csv files of input and output/results/ML/GFS for local RES/`:
 
-The corresponding preprocessing procedures, feature construction, technology aggregation, demand construction, and model assumptions are described in the manuscript and Supplementary Information.
+- `dswrf/`: `dswrf_f3avg_2024.csv`, `dswrf_f6avg_2024.csv`, `dswrf_3hour_reconstructed_2024.csv`, `dswrf_hourly_2024_from_f3f6.csv`.
+- `t2m/`: `t2m_f3_2024.csv`, `t2m_f6_2024.csv`, `t2m_3hour_2024_combined.csv`, `t2m_hourly_2024_from_f3f6.csv`.
+- `u100/`: `u100_f3_2024.csv`, `u100_f6_2024.csv`, `u100_3hour_2024_combined.csv`, `u100_hourly_2024_from_f3f6.csv`.
+- `v100/`: `v100_f3_2024.csv`, `v100_f6_2024.csv`, `v100_3hour_2024_combined.csv`, `v100_hourly_2024_from_f3f6.csv`.
 
-## Forecasting Models
+### Model-ready files and saved optimization cases
 
-Separate feed-forward artificial neural networks (ANNs) were trained for the electricity-generation technology groups used in the study. The forecasting structure uses a 24-hour historical context and day-ahead exogenous information to predict the following 24 hours.
+`Csv files of input and output/optimization input-baseline/` supplies:
 
-The repository provides the trained `.keras` model files used to generate the reported 2024 forecasts. ANN architecture, hyperparameters, train/validation/test partitioning, preprocessing, and out-of-sample performance are reported in the Supplementary Information.
+| Filename | Content |
+| --- | --- |
+| `demand_hourly_2024.csv` | H2, NH3 and MeOH demand, kg/h |
+| `res_hourly_2024.csv` | Available PV, wind and total renewable power, MW |
+| `grid_price_hourly_2024.csv` | Day-ahead electricity price, EUR/MWh |
+| `grid_aef_hourly_2024.csv` | `grid_aef_predicted_kg_per_kwh` |
+| `grid_mef_soft_hourly_2024.csv` | `grid_mef_soft_kg_per_kwh` |
+| `grid_mef_upramp_hourly_2024.csv` | `grid_mef_upramp_pred_kg_per_kwh` |
+| `params_scenario_all.json` | Input-preparation metadata and parameter information; the optimization scalar blocks contain the effective model coefficients. The notebook sets the run horizon. |
+| `M2_S1_emission_bounds_input_file.csv` | Daily signal-specific M0/M1 grid-plus-direct emissions used to construct M2 caps |
 
-**Saved-model environment:** Keras **3.10.0**.
+All hourly inputs use `datetime_utc`. Grid factors are kgCO2/kWh; hourly power is MW, and the accounting converts MW to kW for a one-hour interval.
 
-## Optimization Environment
+Saved cases under `Csv files of input and output/results/Optimizations/baseline models/` are:
 
-The reported rolling-horizon MIQCP calculations were implemented in Python and solved using:
+- `M0/`
+- `M1-aef/`, `M1-mef-soft/`, `M1-mef-upramp/`
+- `M2 - aef 0.2/`, `M2 - aef 0.5/`, `M2 - aef 0.8/`
+- `M2 - mef soft 0.2/`, `M2 - mef soft 0.5/`, `M2 - mef soft 0.8/`
+- `M2 - mef upramp 0.2/`, `M2 - mef upramp 0.5/`, `M2 - mef upramp 0.8/`
 
-- **Gurobi Optimizer:** 13.0.1
-- **Execution environment:** Google Colab CPU runtime
-- **Operating system:** Ubuntu 22.04.5 LTS
-- **Processor:** Intel Xeon @ 2.20 GHz
-- **CPU allocation:** 1 physical core, 2 logical processors
-- **Solver threads:** up to 2
-- **Global time limit:** 350 s per daily optimization
-- **Target second-priority MIP gap:** 0.01
+Each case has a `post/` folder containing `hourly_timeseries_all_days.csv`, `daily_summary.csv`, `annual_summary.csv`, `state_trace.csv`, and `solver_log_daily.csv`. Existing additional files (`daily_diagnostics_flags.csv`, `hourly_ops_signals.csv`, `hourly_emission_signal_diagnostics.csv`) remain available. They are not required for CI execution and are not regenerated by the simplified optimization runner.
 
-The annual study horizon contains 366 sequential daily optimization problems for each rolling-horizon model trajectory.
+## Environment
 
-## Reproducing the Optimization Stage
+Use Python 3.12 and a Jupyter environment. For CI only:
 
-The processed 2024 input files supplied in this repository are the model-ready inputs used in the reported optimization runs. A user interested primarily in reproducing the scheduling and carbon-accounting results can therefore start from these files rather than rebuilding the upstream public datasets.
+```bash
+python -m pip install -r requirements.txt
+jupyter lab
+```
 
-At a high level:
+For scheduling, install `requirements-optimization.txt`, which adds Gurobi 13.0.1, and configure an appropriate Gurobi license using its normal license setup. The study retains the original 350-second daily limit, 1% target MIP gap and hierarchical objectives. The supplied model can exceed restricted-license model-size limits.
 
-1. load the processed 2024 demand, renewable-availability, electricity-price, and emission-signal files;
-2. load the process and storage parameters used by the optimization model;
-3. run the rolling-horizon M0/M1/M2 optimization workflow;
-4. retain the sequential carry-over states between daily solves; and
-5. run the ex-post carbon-propagation and sold-product CI calculations on the solved hourly trajectories.
+For the upstream notebooks, install `requirements-upstream.txt` in a separate environment. They use Keras 3.10.0 with the TensorFlow backend, scikit-learn for scaling/evaluation, statsmodels for MSDR/DLR, `entsoe-py` for source access, and openpyxl for Excel inputs. Notebook 01's existing caches avoid ENTSO-E calls. If a required cache is missing, obtain an ENTSO-E API key and set the `ENTSOE_API_KEY` environment variable before running it. No credential is required to read the supplied GFS CSVs, MIBGAS workbook or emission-factor tables.
 
-For the complete mathematical formulation and parameter definitions, refer to the manuscript Supplementary Information and Appendices.
+## Route A — Reproduce the core numerical results efficiently
 
-## Data and Code Availability
+### A1. CI directly from archived schedules
 
-The code and reproduction materials are provided in this repository:
+Open **`emission_aware_ptx_notebook.ipynb`**. Run the setup cell, then sections 3–4. Leave `RUN_OPTIMIZATION=False` and `RUN_NEW_REFERENCES=False`. The default paths already select M0 and the three central M2 schedules. No ANN, TensorFlow, source download or Gurobi execution is needed.
 
-https://github.com/realalinorouzi/emission-aware-ptx-scheduling
+The equivalent Python call is:
 
-The raw source datasets remain available from their respective public providers listed above.
+```python
+from pathlib import Path
+from product_ci import calculate_product_ci
 
-## Related Manuscript
+root = Path.cwd()  # repository root
+inputs = root / "Csv files of input and output/optimization input-baseline"
+base = root / "Csv files of input and output/results/Optimizations/baseline models"
+hourly, annual = calculate_product_ci(
+    {"M0": base / "M0/post/hourly_timeseries_all_days.csv",
+     "M2-UpRamp MEF0.5": base / "M2 - mef upramp 0.5/post/hourly_timeseries_all_days.csv"},
+    inputs, root / "generated/ci_upramp", signals=["mef_upramp"],
+)
+```
 
-**Ali Norouzi and Erdal Aydin**  
-*Hourly Carbon Intensity of Sold Hydrogen, Ammonia, and Methanol under Emission-Aware Scheduling*
+Only two new files are written: `hourly_carbon_ledger.csv` and `annual_product_ci.csv`. The returned data frames can be inspected directly. Choose a new output folder on subsequent runs.
 
-The complete journal citation and DOI will be added following publication.
+### A2. Scheduling from supplied model-ready inputs
 
-## Contact
+In the principal notebook, select `MODEL`, `SIGNAL`, `ALPHA`, `N_DAYS` and set `RUN_OPTIMIZATION=True`. The signal names are `aef`, `mef_soft` and `mef_upramp`. M0's schedule is independent of this selection; M1 and M2 use it in their emissions objective or cap. Each selected full-year run performs 366 daily solves. `N_DAYS=1` starts at January 1 and produces a partial result.
 
-For questions regarding the code or reproduction materials:
+The supplied `M2_S1_emission_bounds_input_file.csv` can be used with the supplied baseline inputs and plant settings. To regenerate references for a changed input set, the order for one signal is **M0 → M1 → reference file → M2**:
 
-- **Ali Norouzi:** anorouzi24@ku.edu.tr
-- **Alternative email:** realalinorouzi@gmail.com
+```python
+from ptx_optimization import run_optimization, make_emission_bounds
+
+m0 = run_optimization("M0", inputs, root / "generated/optimization")
+m1 = run_optimization("M1", inputs, root / "generated/optimization", signal="mef_upramp")
+bounds = make_emission_bounds(
+    m0 / "post/daily_summary.csv",
+    {"mef_upramp": m1 / "post/daily_summary.csv"},
+    root / "generated/upramp_emission_bounds.csv",
+)
+m2 = run_optimization("M2", inputs, root / "generated/optimization",
+                      signal="mef_upramp", alpha=0.5, bounds=bounds)
+```
+
+This example launches three annual trajectories, or **1,098 daily solves**. Execute it only when an optimization rerun is intended. `make_emission_bounds` can accept all three M1 summaries in its mapping if references for all signals are required. Unprovided signal columns stay blank and cannot be selected for an M2 run.
+
+M0 and M1 retain their own rolling carryover trajectories. Their daily emissions are operational references used by the original M2 interpolation; they are not replaced by same-state reference solves. A cap includes daily grid-related emissions evaluated with the selected signal plus represented direct synthesis emissions. It is not a cap on hourly product CI. The original cap function and its exceptional-case handling are retained.
+
+Each run creates a new timestamped folder under `generated/optimization/`, with exactly five files under `post/`:
+
+1. `hourly_timeseries_all_days.csv` — power, labeled process flows, opening stocks, withdrawals and direct cracking/recovery exports.
+2. `daily_summary.csv` — daily cost, production, sales, emissions and operational totals.
+3. `annual_summary.csv` — totals for the simulated horizon; `n_days_run` identifies partial runs.
+4. `state_trace.csv` — closing material, battery and operating states carried to the next day.
+5. `solver_log_daily.csv` — status, timing and objective-pass information.
+
+Use the new `post/hourly_timeseries_all_days.csv` paths in the CI notebook, with the same `MODEL_READY` input directory used for scheduling. For a January 1 partial run set `FULL_YEAR=False`; a partial result is marked by its actual period and `full_year_2024=False`.
+
+## Route B — Reproduce the complete upstream workflow
+
+1. **Notebook 01:** run its configuration and preprocessing, then the eleven technology blocks. `TRAIN_ANN=False` loads the supplied `.keras` weights; `True` executes each original training procedure with its own architecture, hyperparameters and early stopping. Preprocessing rebuilds the master/scaled tables and sliding windows required by either option. The source caches and supplied trained models are read in place. New files go to `generated/upstream/tier1/`; per-technology outputs use the `gen_*_mw/` subdirectories created by the original code.
+2. **Notebook 02:** run after notebook 01. With `USE_NEW_TIER1=True`, AEF and UpRamp read the newly produced per-technology forecasts. `False` selects the supplied Tier-1 forecasts instead; the preprocessing/master tables from notebook 01 are still required for the AEF calculation. Path adapters normalize the fossil-gas `y_true`/`y_pred` headers to `y_true_mw`/`y_pred_mw` on reading without changing values. The MSDR input assembly combines the technology columns and includes the last month of 2023 for rolling-window history. The original UpRamp screening and MSDR/DLR calculations remain present. The final cell selects UpRamp `k3_q20` and forecast Soft MEF `K=2`, 336-hour windows, writing three signal-input CSVs under `generated/upstream/signals/`.
+3. **Notebook 03:** reconstruct the four hourly GFS series, then run the model-ready preparation cell. `USE_NEW_SIGNALS=True` uses notebook 02's signals; `False` uses supplied model-ready signals. The original PV/wind, demand, price and signal calculations write to `generated/upstream/model_ready/`. Weather reconstruction writes to `generated/upstream/gfs/`. `PRICE_SOURCE` selects the supplied, processed `optimization input-baseline/grid_price_hourly_2024.csv`; another processed hourly price file can be selected with the same column name. Raw weather-download credentials are unnecessary because the extracted f3/f6 CSVs are supplied.
+4. **Principal notebook:** set `MODEL_READY` to `generated/upstream/model_ready/`. Solve M0 and the required M1 references, generate a new daily cap file, and run M2. Do not reuse baseline caps after changing input trajectories or physical settings. Complete CI accounting using those new inputs and hourly schedules.
+
+The upstream notebooks retain their scientific preprocessing and calculations. Their original forecast/regression evaluation outputs remain useful for inspecting those stages; they are separate from the focused optimization/CI outputs. Supplied data, models and original results are never used as output destinations.
+
+## Carbon-accounting conventions and output interpretation
+
+The ex-post ledger follows the solved trajectories without changing dispatch. A daily model has flow indices 0–23 and state indices 0–24; the complete year has 8,784 flow hours and 8,785 state boundaries. End-of-day material inventories, battery SOC and operating states become the next day's initial conditions. Carbon stocks continue across midnight.
+
+Each product tank initially contains 15% of capacity, equally split by green/non-green accounting label. All initial assigned carbon stocks are zero. The labels are accounting pools within a shared physical tank capacity, with perfect mixing within each label. Sales and internal transfers carry opening-pool CI; newly assigned production/recovery burden updates closing carbon stocks. The original proportional battery attribution and cracker-fuel burden treatment are retained.
+
+Existing optimized cracking variables are saved as `crk_nh3_in_g_kgph` and `crk_nh3_in_ng_kgph`, corresponding to `Q_crk_in_g` and `Q_crk_in_ng`. Labeled recovered H2, returned NH3, fuel H2, synthesis H2 transfers, next-boundary tank masses and source-to-process electricity flows are also exported directly. The CI calculation prefers complete direct labeled feed exports. If they are absent in archived trajectories, it retains the original NH3-balance reconstruction. The legacy final row has no shifted next-hour state; final-hour sold CI still uses its opening stock. Direct cracking exports allow final-hour recovery accounting without that shift.
+
+The hourly ledger contains product sales, assigned sold burden, tank CI, process-electricity burden and carbon-stock information. Annual sold-product CI is the ratio of total assigned sold burden to total sold mass, not the arithmetic mean of hourly CI. Hours with sold mass at or below `1e-6 kg` have undefined hourly sold CI (`NaN`). `hourly_statistics()` reports empirical distributions using linear quantiles and sample SD. `paired_hourly_statistics()` compares each included case to M0 under the same evaluation signal on common positive-sale hours, using strict positive/negative CI differences and M2 sold-mass weights. For other model labels, supply a mapping such as `paired_hourly_statistics(hourly, model_signals={"M2": "UpRamp MEF"})`. Both functions return data frames without writing additional files.
+
+The supporting equations and parameters are in the manuscript Methods, SI Sections S1–S2.3 and S7, and Appendices A–D. Appendix E maps these stages to the executable files.
