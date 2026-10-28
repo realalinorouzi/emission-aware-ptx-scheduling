@@ -1,4 +1,4 @@
-# Emission-aware Power-to-X scheduling and sold-product carbon intensity
+# Emission-aware Power-to-X scheduling and sold product carbon intensity
 
 **Research code accompanying:** Ali Norouzi and Erdal Aydin, *Hourly Carbon Intensity of Sold Hydrogen, Ammonia, and Methanol under Emission-Aware Scheduling*.
 
@@ -13,7 +13,7 @@ The code supports two complementary routes. **You do not need to retrain the for
 
 | Route | Starting point | What you can reproduce | Main entry point |
 | --- | --- | --- | --- |
-| **A — Scheduling and carbon accounting** | Supplied model-ready 2024 inputs, or archived optimization trajectories | M0/M1/M2 scheduling and/or hourly and annual sold-product CI | `emission_aware_ptx_notebook.ipynb` |
+| **A — Scheduling and carbon accounting** | Supplied model-ready 2024 inputs, or archived optimization trajectories | M0/M1/M2 scheduling and/or hourly and annual sold product CI | `emission_aware_ptx_notebook.ipynb` |
 | **B — Complete upstream workflow** | Processed ENTSO-E, MIBGAS, Ember, and GFS data; supplied ANN models where applicable | Generation forecasts, emission signals, renewable availability, model-ready inputs, and then Route A | `notebooks/01_forecasting.ipynb` → `02_emission_signals.ipynb` → `03_renewable_inputs.ipynb` |
 
 For the quickest reproduction of the product-CI calculations, use **Route A with the archived schedules** in the next section. Optimization is disabled by default in the principal notebook.
@@ -24,7 +24,7 @@ For the quickest reproduction of the product-CI calculations, use **Route A with
 | --- | --- |
 | `emission_aware_ptx_notebook.ipynb` | Short, configuration-driven notebook for scheduling, generating M2 reference bounds, and running product-CI accounting. |
 | `ptx_optimization.py` | M0 cost baseline, signal-specific M1 emission reference, and emission-capped M2; rolling-horizon state propagation and essential result exports. |
-| `product_ci.py` | Ex-post labeled carbon ledger, hourly and annual sold-product CI, and optional in-memory hourly statistics. |
+| `product_ci.py` | Ex-post labeled carbon ledger, hourly and annual sold product CI, and optional in-memory hourly statistics. |
 | `notebooks/01_forecasting.ipynb` | Tier 1 ENTSO-E processing and eleven technology-specific ANN forecasting models. |
 | `notebooks/02_emission_signals.ipynb` | Tier 2 AEF, UpRamp MEF, and MSDR Soft MEF construction, including the original DLR comparison. |
 | `notebooks/03_renewable_inputs.ipynb` | GFS reconstruction, local PV/wind calculations, demand preparation, and assembly of model-ready inputs. |
@@ -89,8 +89,8 @@ hourly, annual = calculate_product_ci(
 
 The accounting writes **two files** to the selected output folder:
 
-- `hourly_carbon_ledger.csv`: hourly electricity/process carbon assignments, labeled stock burdens, sales, and sold-product CI.
-- `annual_product_ci.csv`: delivered-product carbon intensities and their differences relative to the matched M0 evaluation.
+- `hourly_carbon_ledger.csv`: hourly electricity/process carbon assignments, labeled stock burdens, sales, and sold product CI.
+- `annual_product_ci.csv`: delivered product carbon intensities and their differences relative to the matched M0 evaluation.
 
 Choose an unused output directory for each new accounting execution; existing generated outputs are not silently replaced.
 
@@ -225,7 +225,7 @@ The initial product inventories equal **15% of their respective capacities**, sp
 
 New optimization exports include labeled NH₃ cracker-feed variables (`crk_nh3_in_g_kgph`, `crk_nh3_in_ng_kgph`), recovered streams, relevant H₂ transfers, and inventory boundary states. The CI code uses these direct flows when present; for the archived trajectories, it retains the historical balance-based reconstruction. The original proportional grid/battery electricity attribution and cracker-fuel burden convention are retained.
 
-Hourly sold-product CI equals assigned carbon burden withdrawn during that hour divided by the corresponding sold mass. Hours without meaningful sales have undefined CI. Annual CI uses **total annual sold burden / total annual sold mass**, not the arithmetic mean of hourly CI. Optional distribution and paired-hour comparison functions in `product_ci.py` return DataFrames without creating further files. Paired comparisons use matched positive-sale hours under the same emission signal; a positive or negative CI difference is counted when its magnitude exceeds `1e-12 kgCO2/kg product`.
+Hourly sold product CI equals assigned carbon burden withdrawn during that hour divided by the corresponding sold mass. Hours without meaningful sales have undefined CI. Annual CI uses **total annual sold burden / total annual sold mass**, not the arithmetic mean of hourly CI. Optional distribution and paired-hour comparison functions in `product_ci.py` return DataFrames without creating further files. Paired comparisons use matched positive-sale hours under the same emission signal; a positive or negative CI difference is counted when its magnitude exceeds `1e-12 kgCO2/kg product`.
 
 For the complete model equations and parameter definitions, see the manuscript Methods, SI Sections S1–S2.3 and S7, and Appendices A–E.
 
