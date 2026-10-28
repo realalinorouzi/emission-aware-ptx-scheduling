@@ -5,6 +5,7 @@
 This repository provides the computational workflow used to examine how day-ahead electricity-emission signals affect the operation of a grid-connected Power-to-X (PtX) plant and the carbon intensity (CI) of hydrogen (H₂), ammonia (NH₃), and methanol (MeOH) **actually withdrawn for sale**. The analysis links electricity-generation forecasts and emission signals to rolling-horizon scheduling, followed by ex-post carbon accounting through synthesis, labeled inventories, ammonia cracking, and product withdrawal.
 
 The case study covers Spain in 2024: **366 daily scheduling horizons and 8,784 hourly intervals (UTC)**. The manuscript, Supplementary Information (SI), and Appendices A–E describe the mathematical formulation, parameters, accounting conventions, and scientific results.
+Please contact for any questions or request for files: realalinorouzi@gmail.com
 
 ## Start here
 
